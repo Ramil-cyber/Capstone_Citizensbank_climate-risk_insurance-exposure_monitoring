@@ -1,0 +1,1 @@
+This folder contains U.S. county-level population data obtained from StatsAmerica, based on U.S. Census Bureau's annual population estimates from 2000-2024.
