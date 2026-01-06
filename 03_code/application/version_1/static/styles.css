@@ -1,0 +1,296 @@
+:root{
+  --bg: #0b1220;
+  --panel: rgba(255,255,255,0.06);
+  --panel2: rgba(255,255,255,0.10);
+  --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.65);
+  --stroke: rgba(255,255,255,0.12);
+  --accent: #60a5fa;
+  --good: #34d399;
+  --bad: #fb7185;
+  --shadow: 0 14px 40px rgba(0,0,0,0.35);
+}
+
+*{ box-sizing: border-box; }
+html, body { height: 100%; }
+body{
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  background: radial-gradient(1200px 700px at 20% 0%, rgba(96,165,250,0.25), transparent 55%),
+              radial-gradient(900px 600px at 80% 10%, rgba(52,211,153,0.18), transparent 55%),
+              var(--bg);
+  color: var(--text);
+}
+
+.shell{
+  width: 95vw;          /* take 95% of viewport width */
+  max-width: 1800px;    /* prevents ultra-wide monitors from going crazy */
+  margin: 0 auto;
+  padding: 18px 16px 22px;
+}
+
+.topbar{
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.titleblock h1{
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: 0.2px;
+}
+.titleblock p{
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.controls{
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr; /* three boxes on one row */
+  gap: 12px;
+  align-items: stretch;
+}
+
+.yearbox, .zipbox{
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.yearlabel{
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.yearlabel span{ color: var(--muted); font-size: 13px; }
+.yearlabel strong{ font-size: 18px; }
+
+#yearSlider{
+  width: 100%;
+  margin: 6px 0 10px;
+}
+
+.yearbuttons{
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.zipbox label{
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.ziprow{
+  display: flex;
+  gap: 8px;
+}
+.ziprow input{
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.18);
+  color: var(--text);
+  outline: none;
+}
+.ziprow input:focus{
+  border-color: rgba(96,165,250,0.65);
+  box-shadow: 0 0 0 4px rgba(96,165,250,0.12);
+}
+
+.btn{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(96,165,250,0.45);
+  background: rgba(96,165,250,0.20);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.06s ease, background 0.15s ease;
+}
+.btn:hover{ background: rgba(96,165,250,0.28); }
+.btn:active{ transform: translateY(1px); }
+.btn.ghost{
+  border-color: var(--stroke);
+  background: rgba(255,255,255,0.06);
+}
+
+.status{
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 18px;
+}
+.status.ok{ color: var(--good); }
+.status.bad{ color: var(--bad); }
+
+.main{ display: block; }
+.mapcard{
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+#map{
+  height: 74vh;
+  min-height: 520px;
+  width: 100%;
+}
+
+.mapcard{
+  width: 100%;
+}
+
+#map{
+  height: 78vh;
+}
+
+
+/* Leaflet tweaks */
+.leaflet-control-zoom a{
+  background: rgba(0,0,0,0.35) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--stroke) !important;
+}
+.leaflet-container{ background: #0f172a; }
+
+/* Legend */
+.legendcard{
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  width: 260px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.36);
+  backdrop-filter: blur(10px);
+}
+.legendtitle{
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.legendbar{
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 2px;
+  height: 12px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.swatch{ height: 12px; }
+.legendticks{
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.muted{ color: var(--muted); }
+
+/* Hover card */
+.hovercard{
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 320px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.36);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+.hovercard.show{
+  opacity: 1;
+  transform: translateY(0px);
+}
+.hovername{
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+.hovermeta{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pill{
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,0.06);
+  font-size: 12px;
+}
+
+.footer{
+  margin-top: 12px;
+  padding: 4px 2px;
+}
+
+@media (max-width: 980px){
+  .topbar{ grid-template-columns: 1fr; }
+  .controls{ grid-template-columns: 1fr; }
+  .legendcard, .hovercard{ width: calc(100% - 28px); }
+  .hovercard{ right: 14px; }
+}
+
+.county-popup .title{
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.county-popup table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.county-popup td{
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+.county-popup td:last-child{
+  text-align: right;
+  color: rgba(255,255,255,0.85);
+}
+
+.leaflet-popup.county-hover-popup .leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.95);
+  color: rgba(255,255,255,0.95);
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+}
+
+.leaflet-popup.county-hover-popup .leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.county-popup .title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.county-popup table {
+  width: 100%;
+  font-size: 12px;
+}
+
+.county-popup td {
+  padding: 3px 0;
+}
