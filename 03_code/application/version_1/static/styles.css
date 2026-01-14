@@ -294,3 +294,28 @@ body{
 .county-popup td {
   padding: 3px 0;
 }
+
+.state-label{
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  text-shadow:
+    0 1px 2px rgba(0,0,0,0.9),
+    0 0 6px rgba(0,0,0,0.6);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.county-label{
+  font-weight: 650;
+  font-size: 11px;
+  color: rgba(255,255,255,0.82);
+  text-shadow:
+    0 1px 2px rgba(0,0,0,0.95),
+    0 0 6px rgba(0,0,0,0.55);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-2px);
+}

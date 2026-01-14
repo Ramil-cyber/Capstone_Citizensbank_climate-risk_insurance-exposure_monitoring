@@ -174,6 +174,50 @@ def zip_to_county():
     return jsonify({"zip": zip5, "county_fips": county_fips})
 
 
+@app.get("/api/state_hpi")
+def api_state_hpi():
+    """
+    Returns per-state average HPI for a given year computed from county data.
+
+    {
+      "year": 2026,
+      "min": ...,
+      "max": ...,
+      "values": { "01": 245.2, "02": 310.7, ... }
+    }
+    """
+    year = int(request.args.get("year", YEARS[0]))
+    if year not in YEARS:
+        return jsonify({"error": "Invalid year"}), 400
+
+    cache = get_cache()
+    county_map = cache.by_year[year]  # fips5 -> value
+
+    sums = {}
+    counts = {}
+
+    for county_fips, v in county_map.items():
+        if v is None or not isinstance(v, (int, float)) or v != v:  # NaN check
+            continue
+        state_fips = str(county_fips)[:2]
+        sums[state_fips] = sums.get(state_fips, 0.0) + float(v)
+        counts[state_fips] = counts.get(state_fips, 0) + 1
+
+    values = {}
+    for st, s in sums.items():
+        c = counts.get(st, 0)
+        if c:
+            values[st] = s / c
+
+    if values:
+        mn = min(values.values())
+        mx = max(values.values())
+    else:
+        mn, mx = 0.0, 1.0
+
+    return jsonify({"year": year, "min": mn, "max": mx, "values": values})
+
+
 if __name__ == "__main__":
     # For local dev
     app.run(debug=True, host="0.0.0.0", port=5050)

@@ -51,6 +51,7 @@
             <button id="prevYear" class="btn ghost">◀</button>
             <button id="play" class="btn">Play</button>
             <button id="resetView" class="btn ghost">Reset view</button>
+            <button id="backToStates" class="btn ghost" style="display:none;">Back to states</button>
             <button id="nextYear" class="btn ghost">▶</button>
           </div>
         </div>
@@ -112,7 +113,9 @@
       yearRanges: {{ year_ranges|tojson }},
       countiesGeojsonUrl: "{{ url_for('serve_counties_geojson') }}",
       apiHpiUrl: "/api/hpi",
-      apiZipUrl: "/api/zip_to_county"
+      apiZipUrl: "/api/zip_to_county",
+      statesGeojsonUrl: "/static/data/states.geojson",
+      apiStateHpiUrl: "/api/state_hpi",
     };
   </script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>

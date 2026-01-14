@@ -11,7 +11,24 @@ const state = {
   playTimer: null,
   selectedFips: null,
   countyNameIndex: [], // array of { fips, county, state }
+  
 };
+
+state.mapMode = "states";      // "states" or "counties"
+state.selectedState = null;    // "01", "37", etc.
+
+state.statesLayer = null;
+state.stateValues = {};
+state.stateMin = 0;
+state.stateMax = 1;
+
+state.stateLabelLayer = null;
+
+const COUNTY_LABEL_ZOOM = 7;
+
+state.countyLabelLayer = null;
+state._labelRaf = null;
+
 
 const els = {
   yearValue: document.getElementById("yearValue"),
@@ -38,6 +55,8 @@ const els = {
   countyInput: document.getElementById("countyInput"),
   countyGo: document.getElementById("countyGo"),
   countyStatus: document.getElementById("countyStatus"),      
+
+  backToStates: document.getElementById("backToStates"),
 };
 
 const map = L.map("map", { zoomSnap: 0.25, zoomControl: true })
@@ -47,6 +66,13 @@ els.resetView.addEventListener("click", () => {
   state.selectedFips = null;
   refreshLayerStyles();
   map.setView(INITIAL_VIEW.center, INITIAL_VIEW.zoom);
+
+  if (state.countiesLayer) {
+    map.removeLayer(state.countiesLayer);
+    state.countiesLayer = null;
+    state.countiesIndex = new Map();
+  }
+  clearCountyLabels();
 });
 
 els.countyGo.addEventListener("click", countyZoom);
@@ -246,6 +272,20 @@ async function setYear(year) {
   els.yearValue.textContent = year;
   els.slider.value = year;
 
+  // Always load state averages for legend scaling (and state mode)
+    const st = await fetchStateHpi(year);
+    state.stateValues = st.values || {};
+    state.stateMin = st.min;
+    state.stateMax = st.max;
+
+    if (state.mapMode === "states") {
+    updateLegend(); // you can choose to show state min/max instead, if you want
+    if (state.statesLayer) state.statesLayer.setStyle(styleState);
+    } else {
+    updateLegend();
+    refreshLayerStyles();
+    }
+
   const data = await fetchHpi(year);
   state.hpiValues = data.values || {};
   state.min = data.min;
@@ -253,6 +293,23 @@ async function setYear(year) {
 
   updateLegend();
   refreshLayerStyles();
+
+  // Always update states (they are always visible)
+    if (state.statesLayer) {
+    state.statesLayer.setStyle(styleState);
+    }
+
+    // Update counties overlay if it exists
+    if (state.countiesLayer) {
+    refreshLayerStyles();
+    }
+
+    // Legend auto-switch
+    if (state.countiesLayer) {
+    updateLegend(state.min, state.max, "County HPI");
+    } else {
+    updateLegend(state.stateMin, state.stateMax, "State avg HPI");
+    }
 }
 
 function stepYear(delta) {
@@ -403,10 +460,252 @@ els.zipInput.addEventListener("keydown", (e) => {
 /* Boot */
 (async function init() {
   try {
-    await loadCounties();
+    //await loadCounties();
     await setYear(state.year);
+
+    await loadStates();     // default view
+    await setYear(state.year);
+    showBackButton(false);
   } catch (e) {
     console.error(e);
     alert(e.message);
   }
 })();
+
+function getStateFips(feature) {
+  const p = feature.properties || {};
+  const f = (feature.id || p.STATEFP || p.GEOID || "").toString();
+  return f.padStart(2, "0").slice(0, 2);
+}
+
+async function fetchStateHpi(year) {
+  const res = await fetch(`${APP_CONFIG.apiStateHpiUrl}?year=${encodeURIComponent(year)}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to load state averages");
+  return data;
+}
+
+function makeStateScale(min, max) {
+  const lo = Number.isFinite(min) ? min : 0;
+  const hi = Number.isFinite(max) && max > lo ? max : lo + 1;
+  return chroma.scale(["#102a43", "#2f855a", "#f6ad55", "#c53030"]).domain([lo, hi]).mode("lab");
+}
+
+function styleState(feature) {
+  const st = getStateFips(feature);
+  const v = state.stateValues[st];
+  const scale = makeStateScale(state.stateMin, state.stateMax);
+
+  const has = Number.isFinite(v);
+  return {
+    weight: 1,
+    opacity: 1,
+    color: "rgba(255,255,255,0.45)",
+    fillOpacity: has ? 0.88 : 0.20,
+    fillColor: has ? scale(v).hex() : "#1f2937"
+  };
+}
+
+async function loadStates() {
+  const res = await fetch(APP_CONFIG.statesGeojsonUrl);
+  if (!res.ok) throw new Error("Failed to load states GeoJSON");
+  const geo = await res.json();
+
+  state.statesLayer = L.geoJSON(geo, {
+    style: styleState,
+    onEachFeature: (feature, layer) => {
+      layer.on("mouseover", () => layer.setStyle({ weight: 2 }));
+      layer.on("mouseout", () => layer.setStyle(styleState(feature)));
+
+    layer.on("click", () => {
+    const st = getStateFips(feature);
+    drillToState(st, layer.getBounds());
+    });
+    }
+  }).addTo(map);
+
+  // ----- STATE LABELS -----
+    state.stateLabelLayer = L.layerGroup();
+
+    state.statesLayer.eachLayer(layer => {
+    const feature = layer.feature;
+    const name = getStateName(feature);
+    const center = getFeatureCenter(layer);
+
+    const label = L.marker(center, {
+        icon: L.divIcon({
+        className: "state-label",
+        html: name,
+        iconSize: [100, 24]
+        }),
+        interactive: false
+    });
+
+    state.stateLabelLayer.addLayer(label);
+    });
+
+    // show labels by default (state view)
+    state.stateLabelLayer.addTo(map);
+}
+
+function showBackButton(show) {
+  els.backToStates.style.display = show ? "inline-flex" : "none";
+}
+
+async function drillToState(stateFips, bounds) {
+  state.selectedState = stateFips;
+  state.mapMode = "counties"; // means counties overlay is active
+
+  // Remove existing counties overlay (if any)
+  if (state.countiesLayer) {
+    map.removeLayer(state.countiesLayer);
+    state.countiesLayer = null;
+    state.countiesIndex = new Map();
+  }
+
+  clearCountyLabels(); // if you added county labels at high zoom
+
+  // Load counties geojson and filter to the selected state
+  const res = await fetch(APP_CONFIG.countiesGeojsonUrl);
+  if (!res.ok) throw new Error("Failed to load counties GeoJSON");
+  const geo = await res.json();
+
+  state.countiesIndex = new Map();
+  state.countiesLayer = L.geoJSON(geo, {
+    filter: (feature) => getFipsFromFeature(feature).startsWith(stateFips),
+    style: styleFor,
+    onEachFeature: (feature, layer) => bindFeatureEvents(feature, layer)
+  }).addTo(map);
+
+  // Make sure counties are above states visually
+  state.countiesLayer.bringToFront();
+
+  // Keep states visible & clickable (don’t remove them)
+  if (state.statesLayer) state.statesLayer.bringToBack();
+
+  // Smooth zoom
+  map.flyToBounds(bounds.pad(0.08), { duration: 0.9 });
+
+  // Legend should now reflect counties
+  updateLegend(state.min, state.max, "County HPI");
+
+  // County labels may appear depending on zoom
+  scheduleLabelUpdate();
+}
+
+function backToStates() {
+  state.mapMode = "states";
+  state.selectedState = null;
+  state.selectedFips = null;
+
+  clearCountyLabels();
+
+  if (state.stateLabelLayer) {
+    state.stateLabelLayer.addTo(map);
+    }
+
+  if (state.countiesLayer) map.removeLayer(state.countiesLayer);
+  state.countiesLayer = null;
+  state.countiesIndex = new Map();
+
+  if (state.statesLayer) {
+    state.statesLayer.addTo(map);
+  }
+
+  showBackButton(false);
+  map.setView([39.5, -98.35], 4);
+}
+
+els.backToStates.addEventListener("click", backToStates);
+
+function getStateName(feature) {
+  const p = feature.properties || {};
+  return p.name || p.NAME || p.State || p.state || "State";
+}
+
+function getFeatureCenter(layer) {
+  return layer.getBounds().getCenter();
+}
+
+// map.on("zoomend", () => {
+//   if (!state.stateLabelLayer) return;
+
+//   if (map.getZoom() > 6) {
+//     map.removeLayer(state.stateLabelLayer);
+//   } else if (state.mapMode === "states") {
+//     state.stateLabelLayer.addTo(map);
+//   }
+// });
+
+//For labels
+function getCountyName(feature) {
+  const p = feature.properties || {};
+  // Works with many county geojsons (including Plotly's counties geojson via NAME)
+  return (p.NAME || p.name || p.NAMELSAD || "County").toString();
+}
+
+function clearCountyLabels() {
+  if (state.countyLabelLayer) {
+    state.countyLabelLayer.clearLayers();
+    map.removeLayer(state.countyLabelLayer);
+  }
+  state.countyLabelLayer = null;
+}
+
+function buildCountyLabels() {
+  clearCountyLabels();
+  if (!state.countiesLayer) return;
+
+  state.countyLabelLayer = L.layerGroup();
+
+  state.countiesLayer.eachLayer(layer => {
+    const feature = layer.feature;
+    const name = getCountyName(feature);
+    const center = layer.getBounds().getCenter();
+
+    const marker = L.marker(center, {
+      icon: L.divIcon({
+        className: "county-label",
+        html: name,
+        iconSize: [140, 18]
+      }),
+      interactive: false
+    });
+
+    state.countyLabelLayer.addLayer(marker);
+  });
+}
+
+function showCountyLabelsIfNeeded() {
+  if (state.mapMode !== "counties") {
+    clearCountyLabels();
+    return;
+  }
+
+  const z = map.getZoom();
+  if (z < COUNTY_LABEL_ZOOM) {
+    if (state.countyLabelLayer) map.removeLayer(state.countyLabelLayer);
+    return;
+  }
+
+  // Build once per counties load
+  if (!state.countyLabelLayer) {
+    buildCountyLabels();
+  }
+
+  if (state.countyLabelLayer && !map.hasLayer(state.countyLabelLayer)) {
+    state.countyLabelLayer.addTo(map);
+  }
+}
+
+// Throttle label updates (prevents rebuild spam on pan/zoom)
+function scheduleLabelUpdate() {
+  if (state._labelRaf) return;
+  state._labelRaf = requestAnimationFrame(() => {
+    state._labelRaf = null;
+    showCountyLabelsIfNeeded();
+  });
+}
+
+map.on("zoomend", scheduleLabelUpdate);
+map.on("moveend", scheduleLabelUpdate);
