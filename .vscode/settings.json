@@ -1,0 +1,9 @@
+{
+    "workbench.editorAssociations": {
+        "{git,gitlens,conflictResolution,vscode-local-history}:/**/*.tc.json": "default",
+        "{git,gitlens,conflictResolution,vscode-local-history}:/**/*.{asl.json,asl.yaml,asl.yml}": "default",
+        "*.copilotmd": "vscode.markdown.preview.editor",
+        "file:/**/*.parquet": "jupyter-data-wrangler",
+        "file:/**/*.csv": "jupyter-data-wrangler"
+    }
+}
