@@ -1,5 +1,0 @@
-experiment,best_model,R2,RMSE,MAE,cv_R2
-A_climate_only,RandomForest,-0.561481,4.8921,3.6963,0.205335
-B_economic_only,HistGradientBoosting,0.000216,3.9145,2.6794,0.553302
-C_econ_climate,RandomForest,-0.001908,3.9187,2.6731,0.564943
-D_econ_climate_lag,RandomForest,0.030473,3.8548,2.6529,0.578614
