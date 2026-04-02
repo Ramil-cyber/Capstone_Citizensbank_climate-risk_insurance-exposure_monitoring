@@ -35,6 +35,10 @@ To answer this, we developed 2 complementary modeling pipelines:
 
 We also built an **interactive forecast map** to help visualize projected county-level changes in HPI and insurance-related risk from **2025 to 2030**.
 
+![Interactive Forecast Map](06_images/image_1.png)
+
+*Interactive map showing projected county-level changes in Home Price Index and insurance-related risk from 2025 to 2030.*
+
 ## Objectives
 
 - Forecast climate-related insurance premium risk in California
@@ -92,6 +96,14 @@ We developed a county-level XGBoost model to predict next-year HPI across U.S. c
 
 We used recursive backtesting to evaluate how forecast accuracy changes over longer horizons. This helped us quantify uncertainty and assess how model error compounds as projections extend further into the future.
 
+![National HPI Trend Capture](06_images/image_3.png)
+
+*Comparison of predicted and actual national HPI trends, showing that the model captured the overall housing trend well.*
+
+![Backtesting and Forecast Uncertainty](06_images/image_4.png)
+
+*Backtesting results showing that forecast error increases over longer horizons, with widening uncertainty in future projections.*
+
 ### 4. Interactive Map
 
 To make the results more practical and accessible, we developed an interactive map for exploring projected county-level housing and insurance-related risk from **2025 to 2030**.
@@ -102,6 +114,10 @@ The map helps users:
 - monitor how climate and economic conditions may influence future exposure
 
 ## Key Results
+
+![HPI Model Performance](06_images/image_2.png)
+
+*Predicted vs. actual county-level Home Price Index values. The XGBoost model achieved strong predictive performance with R² = 0.98.*
 
 - The HPI model achieved strong county-level predictive performance with **R² = 0.98**
 - Predicted and actual HPI aligned closely across most states
