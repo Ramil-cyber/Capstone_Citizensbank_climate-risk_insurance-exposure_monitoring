@@ -15,7 +15,7 @@ This repository contains our 2026 Duke MIDS capstone project developed in collab
 ## Advisor and Client Partner
 
 **Faculty Advisor:** Professor Alexander Fisher, Department of Statistical Science, Duke University  
-**Client Partner:** Citizens Financial Group  
+**Client Partner:** Mr. Michael Williams and Mr. Shaun DePorter from Citizens Financial Group  
 
 ## Project Overview
 
